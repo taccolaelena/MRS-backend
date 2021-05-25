@@ -2,9 +2,10 @@
     "name": "backend-mrs",
     "version": "1.0.0",
     "dependencies": {
+        "cors": "^2.8.5",
         "express": "^4.17.0"
     },
     "scripts": {
         "start": "node app.js"
-      }
+    }
 }

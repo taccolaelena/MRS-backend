@@ -1,9 +1,10 @@
 const express = require("express");
 const fs = require("fs");
-
+const cors = require('cors');
 const app = express();
 const jsonParser = express.json();
 
+app.use(cors());
 app.use(express.static(__dirname + "/public"));
 
 const filePath = "appointments.json";
