@@ -4,7 +4,12 @@ const cors = require('cors');
 const app = express();
 const jsonParser = express.json();
 const MongoClient = require("mongodb").MongoClient; // импортируем из библиотеки MongoClient
+const jwt = require('jsonwebtoken');
+const bodyParser = require('body-parser');
 
+const accessTokenSecret = 'youraccesstokensecret';
+
+app.use(bodyParser.json());
 app.use(cors());
 app.use(express.static(__dirname + "/public"));
 
@@ -12,7 +17,8 @@ const filePath = "appointments.json";
 
 let dbClient; // объявляем dbClient, через который
 let db;
-let collection;
+let appointments;
+let users;
 
 // создаем объект mongoClient и передаем ему строку подключения
 const mongoClient = new MongoClient("mongodb://localhost:27017/", { useUnifiedTopology: true });
@@ -22,14 +28,37 @@ mongoClient.connect((err, client) => {
     }
     dbClient = client; // чтобы можно было использовать dbClient за пределами этого коллбэка
     db = dbClient.db("mrs");
-    collection = db.collection("appointments");
+    appointments = db.collection("appointments");
+    users = db.collection("users");
+
     // взаимодействие с базой данных
     // client.close(); // пока не закрываем подключение к базе
 });
 
+//логин
+app.post('/api/login', async (req, res) => {
+    // Read username and password from request body
+    const { username, password } = req.body;
+
+    // Filter user from the users array by username and password
+    // const user = users.find(u => { return u.username === username && u.password === password });
+    const user = await users.findOne({ username: username, password: password });
+
+    if (user) {
+        // Generate an access token
+        const accessToken = jwt.sign({ username: user.username, role: user.role }, accessTokenSecret);
+
+        res.json({
+            accessToken
+        });
+    } else {
+        res.send('Username or password incorrect');
+    }
+});
+
 //получение всех пользователей
 app.get("/api/appointments", function (req, res) {
-    collection.find({}).toArray((err, appointments) => {
+    appointments.find({}).toArray((err, appointments) => {
         if (err) return console.log("Ошибка получения записей приёмов: ", err); // В случае ошибки ругаемся и выходим из функции
         res.send(appointments); // В случае успеха, отправляем полученные данные на фронт
     });
