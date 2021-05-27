@@ -35,6 +35,26 @@ mongoClient.connect((err, client) => {
     // client.close(); // пока не закрываем подключение к базе
 });
 
+// промежуточная функция для проверки токена
+const authenticateJWT = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+
+    if (authHeader) {
+        const token = authHeader.split(' ')[1];
+
+        jwt.verify(token, accessTokenSecret, (err, user) => {
+            if (err) {
+                return res.sendStatus(403);
+            }
+
+            req.user = user;
+            next();
+        });
+    } else {
+        res.sendStatus(401);
+    }
+};
+
 //логин
 app.post('/api/login', async (req, res) => {
     // Read username and password from request body
@@ -57,7 +77,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 //получение всех пользователей
-app.get("/api/appointments", function (req, res) {
+app.get("/api/appointments", authenticateJWT, (req, res) => {
     appointments.find({}).toArray((err, appointments) => {
         if (err) return console.log("Ошибка получения записей приёмов: ", err); // В случае ошибки ругаемся и выходим из функции
         res.send(appointments); // В случае успеха, отправляем полученные данные на фронт
